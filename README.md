@@ -2,7 +2,7 @@
 
 ## Deskripsi
 
-Task Management App adalah aplikasi berbasis web yang membantu pengguna dalam mengelola tugas mereka. Aplikasi ini memungkinkan pengguna untuk membuat, mengedit, mencari, dan mengelompokkan tugas berdasarkan status. yang bisa diakses di [Task Management App](https://react-task-management-lime.vercel.app/).
+Task Management App adalah aplikasi berbasis web yang membantu pengguna dalam mengelola tugas mereka. Aplikasi ini memungkinkan pengguna untuk membuat, mengedit, mencari, dan mengelompokkan tugas berdasarkan status. yang bisa diakses di [Task Management App](https://task.tribber.live/home).
 
 ## Fitur
 
