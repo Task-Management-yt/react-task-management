@@ -34,7 +34,6 @@ export const register = async (userData: {
     password: string;
 }) => {
     try {
-        console.log(`Mengirim request ke: ${API_URL}/signup`);
         const response = await fetch(`${API_URL}/signup`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -86,7 +85,6 @@ export const getUser = async () => {
 
         return data;
     } catch (error) {
-        console.error("Error fetching user data:", error);
         if (error instanceof Error) {
             throw new Error(error.message || "Terjadi kesalahan yang tidak diketahui");
         } else {

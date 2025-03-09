@@ -33,11 +33,9 @@ const Login = () => {
         if (!validateForm()) return;
 
         try {
-            const data = await login(email, password);
-            console.log("Login successful:", data);
+            await login(email, password);
             // redirect pengguna
             navigate("/home");
-            console.log(`Ini token: ${localStorage.getItem("token")}`);
         } catch (err) {
             if (err instanceof Error) {
                 setErrorMessage(err.message || "Terjadi kesalahan saat login.");

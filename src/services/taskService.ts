@@ -18,7 +18,6 @@ export const getUserTasks = async () => {
 
         return data;
     } catch (error) {
-        console.error("Error fetching user data:", error);
         if (error instanceof Error) {
             throw new Error(error.message || "Terjadi kesalahan yang tidak diketahui");
         } else {

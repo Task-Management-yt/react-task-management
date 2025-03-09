@@ -78,7 +78,7 @@ const Home = () => {
             <div className="row mb-5">
                 {tasksToDisplay.map((task) => (
                     <div className="col-md-6 col-lg-4 mb-3" key={task.id}>
-                        <div className="card shadow-sm h-100"> {/* Tinggi card sama */}
+                        <div className="card shadow-lg h-100"> {/* Tinggi card sama */}
                             <div className="card-header">
                                 {task.status === "belum selesai" && <i className="bx bxs-calendar-exclamation text-secondary fs-4"></i>}
                                 {task.status === "sedang berjalan" && <i className="bx bx-loader text-warning fs-4"></i>}
