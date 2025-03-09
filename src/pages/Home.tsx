@@ -1,10 +1,13 @@
-import "bootstrap/dist/css/bootstrap.min.css";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, logout } from "../services/authService";
-import { useEffect, useState } from "react";
 import { getUserTasks, addTask, editTask, deleteTask } from "../services/taskService";
 import TaskResponse from "../context/schema";
-import { Modal, Button, Form } from "react-bootstrap";
+import TaskList from "../components/TaskList";
+import TaskDetailModal from "../components/TaskDetailModal";
+import TaskEditModal from "../components/TaskEditModal";
+import TaskAddModal from "../components/TaskAddModal";
+import Navbar from "../components/Navbar";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -207,50 +210,13 @@ const Home = () => {
                 ? filteredTasks
                 : filteredTasks.filter((task) => task.status.toLowerCase() === category.replace("_", " "));
 
-        return isLoading ? (
-            <p className="text-center">Loading tasks...</p>
-        ) : tasksToDisplay.length === 0 ? (
-            <p className="text-center">Tidak ada tugas yang ditemukan.</p>
-        ) : (
-            <div className="row mb-5">
-                {tasksToDisplay.map((task) => (
-                    <div className="col-md-6 col-lg-4 mb-3" key={task.id}>
-                        <div className="card shadow-lg h-100">
-                            <div className="card-header">
-                                {task.status === "belum selesai" && <i className="bx bxs-calendar-exclamation text-secondary fs-4"></i>}
-                                {task.status === "sedang berjalan" && <i className="bx bx-loader text-warning fs-4"></i>}
-                                {task.status === "selesai" && <i className="bx bx-task text-success fs-4"></i>}
-                                {` ${task.status}`}
-                            </div>
-                            <div className="card-body d-flex flex-column">
-                                <h5 className="card-title">{task.title}</h5>
-                                <p className="card-text flex-grow-1 text-truncate" style={{ maxHeight: "100px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {task.description}
-                                </p>
-                                <p className="card-text">
-                                    <small className="text-muted">Deadline: {new Date(task.deadline).toLocaleDateString()}</small>
-                                </p>
-                                <div className="row">
-                                    <div className="d-flex gap-2">
-                                        <button
-                                            className="btn btn-primary mt-auto"
-                                            onClick={() => handleViewDetails(task)}
-                                        >
-                                            View Details
-                                        </button>
-                                        <button
-                                            className="btn btn-warning mt-auto"
-                                            onClick={() => handleEditTask(task)}
-                                        >
-                                            Edit
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+        return (
+            <TaskList
+                tasks={tasksToDisplay}
+                isLoading={isLoading}
+                handleViewDetails={handleViewDetails}
+                handleEditTask={handleEditTask}
+            />
         );
     };
 
@@ -264,57 +230,13 @@ const Home = () => {
         <div className="layout-wrapper layout-content-navbar layout-without-menu">
             <div className="layout-container">
                 <div className="layout-page">
-                    <nav className="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
-                        <div className="navbar-nav-right d-flex align-items-center w-100">
-                            <div className="navbar-nav align-items-center">
-                                <div className="nav-item d-flex align-items-center">
-                                    <i className="bx bx-search fs-4 lh-0"></i>
-                                    <input
-                                        type="text"
-                                        className="form-control border-0 shadow-none"
-                                        placeholder="Search..."
-                                        aria-label="Search..."
-                                        value={searchKeyword}
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <ul className="navbar-nav flex-row align-items-center ms-auto">
-                                <li className="nav-item navbar-dropdown dropdown-user dropdown">
-                                    <a className="nav-link dropdown-toggle hide-arrow" href="#" data-bs-toggle="dropdown">
-                                        <div className="avatar avatar-online">
-                                            <img src="/assets/img/avatars/0.svg" alt="User" className="w-px-40 h-auto rounded-circle" />
-                                        </div>
-                                    </a>
-                                    <ul className="dropdown-menu dropdown-menu-end">
-                                        {error ? (
-                                            <p className="text-danger">{error}</p>
-                                        ) : user ? (
-                                            <li>
-                                                <a className="dropdown-item" href="#">
-                                                    <div className="d-flex">
-                                                        <div className="flex-shrink-0 me-3">
-                                                            <div className="avatar avatar-online">
-                                                                <img src="/assets/img/avatars/0.svg" alt="User" className="w-px-40 h-auto rounded-circle" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex-grow-1">
-                                                            <span className="fw-semibold d-block">{user.name}</span>
-                                                            <small className="text-muted">{user.email}</small>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                        ) : (
-                                            <p>Loading user data...</p>
-                                        )}
-                                        <li><div className="dropdown-divider"></div></li>
-                                        <li><a className="dropdown-item" href="/" onClick={handleLogout}>Log Out</a></li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </div>
-                    </nav>
+                    <Navbar
+                        user={user}
+                        error={error}
+                        handleLogout={handleLogout}
+                        searchKeyword={searchKeyword}
+                        handleSearch={handleSearch}
+                    />
 
                     <div className="content-wrapper">
                         <div className="container-xxl flex-grow-1 container-p-y">
@@ -359,163 +281,32 @@ const Home = () => {
             </div>
 
             {/* Modal untuk menampilkan detail task */}
-            <Modal show={showDetailModal} onHide={handleCloseDetailModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{selectedTask?.title}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {selectedTask && (
-                        <>
-                            <p>{selectedTask.description}</p>
-                            <p>
-                                <strong>Status:</strong> {selectedTask.status}
-                            </p>
-                            <p>
-                                <strong>Deadline:</strong> {new Date(selectedTask.deadline).toLocaleDateString()}
-                            </p>
-                            <p>
-                                <strong>Created At:</strong> {new Date(selectedTask.created_at).toLocaleDateString()}
-                            </p>
-                        </>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseDetailModal}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            <TaskDetailModal
+                show={showDetailModal}
+                handleClose={handleCloseDetailModal}
+                selectedTask={selectedTask}
+            />
 
             {/* Modal untuk edit task */}
-            <Modal show={showEditModal} onHide={handleCloseEditModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Edit Task</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {editTaskData && (
-                        <Form>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Title</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={editTaskData.title}
-                                    onChange={(e) => setEditTaskData({ ...editTaskData, title: e.target.value })}
-                                    isInvalid={!!editTaskErrors.title}
-                                />
-                                <Form.Control.Feedback type="invalid">
-                                    {editTaskErrors.title}
-                                </Form.Control.Feedback>
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Description</Form.Label>
-                                <Form.Control
-                                    as="textarea"
-                                    rows={3}
-                                    value={editTaskData.description}
-                                    onChange={(e) => setEditTaskData({ ...editTaskData, description: e.target.value })}
-                                />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Status</Form.Label>
-                                <Form.Select
-                                    value={editTaskData.status}
-                                    onChange={(e) => setEditTaskData({ ...editTaskData, status: e.target.value })}
-                                >
-                                    <option value="belum selesai">Belum Selesai</option>
-                                    <option value="sedang berjalan">Sedang Berjalan</option>
-                                    <option value="selesai">Selesai</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Deadline</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    value={editTaskData.deadline}
-                                    onChange={(e) => setEditTaskData({ ...editTaskData, deadline: e.target.value })}
-                                    isInvalid={!!editTaskErrors.deadline}
-                                />
-                                <Form.Control.Feedback type="invalid">
-                                    {editTaskErrors.deadline}
-                                </Form.Control.Feedback>
-                            </Form.Group>
-                        </Form>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="danger" onClick={() => editTaskData && handleDeleteTask(editTaskData.id)}>
-                        Hapus Task
-                    </Button>
-                    <Button variant="secondary" onClick={handleCloseEditModal}>
-                        Batal
-                    </Button>
-                    <Button variant="primary" onClick={handleSaveEdit}>
-                        Simpan
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            <TaskEditModal
+                show={showEditModal}
+                handleClose={handleCloseEditModal}
+                editTaskData={editTaskData}
+                handleSaveEdit={handleSaveEdit}
+                setEditTaskData={setEditTaskData}
+                editTaskErrors={editTaskErrors}
+                handleDeleteTask={handleDeleteTask}
+            />
 
             {/* Modal untuk tambah task */}
-            <Modal show={showAddModal} onHide={handleCloseAddModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Tambah Task</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Title</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={newTask.title}
-                                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                                isInvalid={!!newTaskErrors.title}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {newTaskErrors.title}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Description</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={newTask.description}
-                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Status</Form.Label>
-                            <Form.Select
-                                value={newTask.status}
-                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                            >
-                                <option value="belum selesai">Belum Selesai</option>
-                                <option value="sedang berjalan">Sedang Berjalan</option>
-                                <option value="selesai">Selesai</option>
-                            </Form.Select>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Deadline</Form.Label>
-                            <Form.Control
-                                type="date"
-                                value={newTask.deadline}
-                                onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
-                                isInvalid={!!newTaskErrors.deadline}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {newTaskErrors.deadline}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseAddModal}>
-                        Batal
-                    </Button>
-                    <Button variant="primary" onClick={handleSaveTask}>
-                        Simpan
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            <TaskAddModal
+                show={showAddModal}
+                handleClose={handleCloseAddModal}
+                newTask={newTask}
+                setNewTask={setNewTask}
+                newTaskErrors={newTaskErrors}
+                handleSaveTask={handleSaveTask}
+            />
         </div>
     );
 };
