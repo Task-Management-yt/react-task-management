@@ -19,7 +19,8 @@ import "./assets/vendor/js/menu.js";
 import "./assets/js/main.js";
 import Register from "./pages/Register.js";
 import Home from "./pages/Home.js";
-import ProtectedRoute from "./context/ProtectedRoute.js";
+import ProtectedRoute from "./ProtectedRoute.js";
+import Task from "./pages/Task.js";
 // import "https://buttons.github.io/buttons.js";
 
 
@@ -34,6 +35,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task/:taskId"
+          element={
+            <ProtectedRoute>
+              <Task />
             </ProtectedRoute>
           }
         />

@@ -2,16 +2,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import { getUser, logout } from "../services/authService";
 import { useEffect, useState } from "react";
-import { getUserTasks } from "../services/taskService";
-
-interface TaskResponse {
-    id: string;
-    title: string;
-    description: string;
-    deadline: string;
-    status: string;
-    created_at: string;
-}
+import { getUserTasks, addTask, editTask, deleteTask } from "../services/taskService";
+import TaskResponse from "../context/schema";
+import { Modal, Button, Form } from "react-bootstrap";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -24,6 +17,24 @@ const Home = () => {
     const [activeTab, setActiveTab] = useState<string>("all");
     const [searchKeyword, setSearchKeyword] = useState("");
 
+    const [selectedTask, setSelectedTask] = useState<TaskResponse | null>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+
+    const [editTaskData, setEditTaskData] = useState<TaskResponse | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newTask, setNewTask] = useState({
+        title: "",
+        description: "",
+        status: "",
+        deadline: "",
+    });
+
+    const [newTaskErrors, setNewTaskErrors] = useState<{ title?: string; deadline?: string }>({});
+    const [editTaskErrors, setEditTaskErrors] = useState<{ title?: string; deadline?: string }>({});
+
+    // Fetch user and tasks on component mount
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -47,6 +58,7 @@ const Home = () => {
         fetchUser();
     }, []);
 
+    // Handle search functionality
     const handleSearch = (keyword: string) => {
         setSearchKeyword(keyword);
         const filtered = tasks.filter(
@@ -57,6 +69,7 @@ const Home = () => {
         setFilteredTasks(filtered);
     };
 
+    // Group tasks by status
     const groupedTasks = {
         all: filteredTasks.length,
         belum_selesai: filteredTasks.filter((task) => task.status.toLowerCase() === "belum selesai").length,
@@ -64,6 +77,130 @@ const Home = () => {
         selesai: filteredTasks.filter((task) => task.status.toLowerCase() === "selesai").length,
     };
 
+    // Handle viewing task details
+    const handleViewDetails = (task: TaskResponse) => {
+        setSelectedTask(task);
+        setShowDetailModal(true);
+    };
+
+    const handleCloseDetailModal = () => {
+        setShowDetailModal(false);
+        setSelectedTask(null);
+    };
+
+    // Handle editing task
+    const handleEditTask = (task: TaskResponse) => {
+        // Format deadline ke YYYY-MM-DD
+        const formattedDeadline = new Date(task.deadline).toISOString().split("T")[0];
+        setEditTaskData({
+            ...task,
+            deadline: formattedDeadline, // Update deadline dengan format yang benar
+        });
+        setShowEditModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false);
+        setEditTaskData(null);
+        setEditTaskErrors({});
+    };
+
+    // Validasi form edit task
+    const validateEditTask = () => {
+        const errors: { title?: string; deadline?: string } = {};
+
+        if (!editTaskData?.title.trim()) {
+            errors.title = "Title is required";
+        }
+
+        if (!editTaskData?.deadline) {
+            errors.deadline = "Deadline is required";
+        }
+
+        setEditTaskErrors(errors);
+
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSaveEdit = async () => {
+        if (!validateEditTask()) {
+            return;
+        }
+
+        if (editTaskData) {
+            try {
+                const updatedTask = await editTask(editTaskData.id, editTaskData);
+                setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)));
+                setFilteredTasks(filteredTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)));
+                setShowEditModal(false);
+                setEditTaskErrors({});
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (error) {
+                setError("Failed to edit task");
+            }
+        }
+    };
+
+    // Handle deleting task
+    const handleDeleteTask = async (taskId: string) => {
+        try {
+            await deleteTask(taskId);
+            setTasks(tasks.filter((task) => task.id !== taskId));
+            setFilteredTasks(filteredTasks.filter((task) => task.id !== taskId));
+            setShowEditModal(false);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+            setError("Failed to delete task");
+        }
+    };
+
+    // Handle adding new task
+    const handleAddTask = () => {
+        setShowAddModal(true);
+    };
+
+    const handleCloseAddModal = () => {
+        setShowAddModal(false);
+        setNewTask({ title: "", description: "", status: "", deadline: "" });
+        setNewTaskErrors({});
+    };
+
+    // Validasi form tambah task
+    const validateNewTask = () => {
+        const errors: { title?: string; deadline?: string } = {};
+
+        if (!newTask.title.trim()) {
+            errors.title = "Title is required";
+        }
+
+        if (!newTask.deadline) {
+            errors.deadline = "Deadline is required";
+        }
+
+        setNewTaskErrors(errors);
+
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSaveTask = async () => {
+        if (!validateNewTask()) {
+            return;
+        }
+
+        try {
+            const savedTask = await addTask(newTask);
+            setTasks([...tasks, savedTask]);
+            setFilteredTasks([...filteredTasks, savedTask]);
+            setShowAddModal(false);
+            setNewTask({ title: "", description: "", status: "", deadline: "" });
+            setNewTaskErrors({});
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+            setError("Failed to add task");
+        }
+    };
+
+    // Render task list based on active tab
     const renderTaskList = (category: string) => {
         const tasksToDisplay =
             category === "all"
@@ -78,7 +215,7 @@ const Home = () => {
             <div className="row mb-5">
                 {tasksToDisplay.map((task) => (
                     <div className="col-md-6 col-lg-4 mb-3" key={task.id}>
-                        <div className="card shadow-lg h-100"> {/* Tinggi card sama */}
+                        <div className="card shadow-lg h-100">
                             <div className="card-header">
                                 {task.status === "belum selesai" && <i className="bx bxs-calendar-exclamation text-secondary fs-4"></i>}
                                 {task.status === "sedang berjalan" && <i className="bx bx-loader text-warning fs-4"></i>}
@@ -93,7 +230,22 @@ const Home = () => {
                                 <p className="card-text">
                                     <small className="text-muted">Deadline: {new Date(task.deadline).toLocaleDateString()}</small>
                                 </p>
-                                <a href="#" className="btn btn-primary mt-auto">Go somewhere</a>
+                                <div className="row">
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            className="btn btn-primary mt-auto"
+                                            onClick={() => handleViewDetails(task)}
+                                        >
+                                            View Details
+                                        </button>
+                                        <button
+                                            className="btn btn-warning mt-auto"
+                                            onClick={() => handleEditTask(task)}
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -101,10 +253,13 @@ const Home = () => {
             </div>
         );
     };
+
+    // Handle logout
     const handleLogout = () => {
         logout();
         navigate("/");
     };
+
     return (
         <div className="layout-wrapper layout-content-navbar layout-without-menu">
             <div className="layout-container">
@@ -166,7 +321,7 @@ const Home = () => {
                             <div className="col-xl-12">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <h6 className="text-muted">Daftar Tugas</h6>
-                                    <button className="btn btn-primary" onClick={() => navigate("/add-task")}>
+                                    <button className="btn btn-primary" onClick={handleAddTask}>
                                         <i className="bx bx-plus"></i> Tambah Task
                                     </button>
                                 </div>
@@ -202,6 +357,165 @@ const Home = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal untuk menampilkan detail task */}
+            <Modal show={showDetailModal} onHide={handleCloseDetailModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>{selectedTask?.title}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedTask && (
+                        <>
+                            <p>{selectedTask.description}</p>
+                            <p>
+                                <strong>Status:</strong> {selectedTask.status}
+                            </p>
+                            <p>
+                                <strong>Deadline:</strong> {new Date(selectedTask.deadline).toLocaleDateString()}
+                            </p>
+                            <p>
+                                <strong>Created At:</strong> {new Date(selectedTask.created_at).toLocaleDateString()}
+                            </p>
+                        </>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseDetailModal}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal untuk edit task */}
+            <Modal show={showEditModal} onHide={handleCloseEditModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Edit Task</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editTaskData && (
+                        <Form>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Title</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={editTaskData.title}
+                                    onChange={(e) => setEditTaskData({ ...editTaskData, title: e.target.value })}
+                                    isInvalid={!!editTaskErrors.title}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {editTaskErrors.title}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Description</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    value={editTaskData.description}
+                                    onChange={(e) => setEditTaskData({ ...editTaskData, description: e.target.value })}
+                                />
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Status</Form.Label>
+                                <Form.Select
+                                    value={editTaskData.status}
+                                    onChange={(e) => setEditTaskData({ ...editTaskData, status: e.target.value })}
+                                >
+                                    <option value="belum selesai">Belum Selesai</option>
+                                    <option value="sedang berjalan">Sedang Berjalan</option>
+                                    <option value="selesai">Selesai</option>
+                                </Form.Select>
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Deadline</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    value={editTaskData.deadline}
+                                    onChange={(e) => setEditTaskData({ ...editTaskData, deadline: e.target.value })}
+                                    isInvalid={!!editTaskErrors.deadline}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {editTaskErrors.deadline}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="danger" onClick={() => editTaskData && handleDeleteTask(editTaskData.id)}>
+                        Hapus Task
+                    </Button>
+                    <Button variant="secondary" onClick={handleCloseEditModal}>
+                        Batal
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveEdit}>
+                        Simpan
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal untuk tambah task */}
+            <Modal show={showAddModal} onHide={handleCloseAddModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Tambah Task</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Title</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={newTask.title}
+                                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                                isInvalid={!!newTaskErrors.title}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {newTaskErrors.title}
+                            </Form.Control.Feedback>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                value={newTask.description}
+                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Status</Form.Label>
+                            <Form.Select
+                                value={newTask.status}
+                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                            >
+                                <option value="belum selesai">Belum Selesai</option>
+                                <option value="sedang berjalan">Sedang Berjalan</option>
+                                <option value="selesai">Selesai</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Deadline</Form.Label>
+                            <Form.Control
+                                type="date"
+                                value={newTask.deadline}
+                                onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                                isInvalid={!!newTaskErrors.deadline}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {newTaskErrors.deadline}
+                            </Form.Control.Feedback>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseAddModal}>
+                        Batal
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveTask}>
+                        Simpan
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
