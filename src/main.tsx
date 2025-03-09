@@ -18,6 +18,7 @@ import "./assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js";
 import "./assets/vendor/js/menu.js";
 import "./assets/js/main.js";
 import Register from "./pages/Register.js";
+import Home from "./pages/Home.js";
 // import "https://buttons.github.io/buttons.js";
 
 
@@ -27,6 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Register />} />
+        <Route path="/home" element={<Home />} />
       </Routes>
     </Router>
   </React.StrictMode>
