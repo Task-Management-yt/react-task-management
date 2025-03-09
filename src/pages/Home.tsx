@@ -50,6 +50,8 @@ const Home = () => {
             } catch (error) {
                 if (error instanceof Error) {
                     setError(error.message);
+                    logout();
+                    navigate("/");
                 } else {
                     setError("An unknown error occurred");
                 }
@@ -59,7 +61,7 @@ const Home = () => {
         };
 
         fetchUser();
-    }, []);
+    }, [navigate]);
 
     // Handle search functionality
     const handleSearch = (keyword: string) => {
