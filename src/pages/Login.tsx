@@ -50,8 +50,9 @@ const Login = () => {
         <div className="container d-flex justify-content-center align-items-center vh-100">
             <div className="card p-4" style={{ width: "400px" }}>
                 <div className="text-center">
-                    <h4>Welcome to Sneat! 👋</h4>
-                    <p>Please sign-in to your account and start the adventure</p>
+                    <h4>Welcome to Kerjain 📝</h4>
+                    <p>🚀 Kelola tugasmu dengan mudah,<br />💡 Tetap produktif setiap hari!</p>
+                    <p></p>
                 </div>
                 {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
                 <form onSubmit={handleLogin}>
@@ -81,7 +82,7 @@ const Login = () => {
                     <small>New on our platform? <a href="/signup">Create an account</a></small>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

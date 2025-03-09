@@ -244,7 +244,7 @@ const Home = () => {
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <h6 className="text-muted">Daftar Tugas</h6>
                                     <button className="btn btn-primary" onClick={handleAddTask}>
-                                        <i className="bx bx-plus"></i> Tambah Task
+                                        <i className="bx bx-plus"></i> Tambah Tugas
                                     </button>
                                 </div>
                                 <div className="nav-align-top mb-4">
@@ -260,7 +260,7 @@ const Home = () => {
                                                     {category === "belum_selesai" && <i className="bx bxs-calendar-exclamation text-secondary"></i>}
                                                     {category === "sedang_berjalan" && <i className="bx bx-loader text-warning"></i>}
                                                     {category === "selesai" && <i className="bx bx-task text-success"></i>}
-                                                    {`  ${category.replace("_", " ").toUpperCase()}`} ({groupedTasks[category as keyof typeof groupedTasks]})
+                                                    {`  ${category === "all" ? "SEMUA" : category.replace("_", " ").toUpperCase()}`} ({groupedTasks[category as keyof typeof groupedTasks]})
                                                 </button>
                                             </li>
                                         ))}
@@ -273,7 +273,7 @@ const Home = () => {
                         </div>
                         <footer className="content-footer footer bg-footer-theme">
                             <div className="container-xxl d-flex flex-wrap justify-content-between py-2">
-                                <div>&copy; {new Date().getFullYear()}, made with ❤️ by ThemeSelection</div>
+                                <div>&copy; {new Date().getFullYear()}, made by Yoni Tribber</div>
                             </div>
                         </footer>
                     </div>

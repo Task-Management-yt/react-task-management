@@ -8,6 +8,12 @@ interface TaskListProps {
     handleEditTask: (task: TaskResponse) => void;
 }
 
+const toTitleCase = (str: string): string => {
+    return str.replace(/\w\S*/g, (word) => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    });
+};
+
 const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, handleViewDetails, handleEditTask }) => {
     return (
         <div className="row mb-5">
@@ -23,7 +29,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, handleViewDetails
                                 {task.status === "belum selesai" && <i className="bx bxs-calendar-exclamation text-secondary fs-4"></i>}
                                 {task.status === "sedang berjalan" && <i className="bx bx-loader text-warning fs-4"></i>}
                                 {task.status === "selesai" && <i className="bx bx-task text-success fs-4"></i>}
-                                {` ${task.status}`}
+                                {` ${toTitleCase(task.status)}`}
                             </div>
                             <div className="card-body d-flex flex-column">
                                 <h5 className="card-title">{task.title}</h5>
@@ -39,7 +45,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, handleViewDetails
                                             className="btn btn-primary mt-auto"
                                             onClick={() => handleViewDetails(task)}
                                         >
-                                            View Details
+                                            Lihat Detail
                                         </button>
                                         <button
                                             className="btn btn-warning mt-auto"
