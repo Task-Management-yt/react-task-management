@@ -15,19 +15,18 @@ interface TaskResponse {
 
 const Home = () => {
     const navigate = useNavigate();
-
     const [user, setUser] = useState<{ id: string; name: string; username: string; email: string } | null>(null);
     const [tasks, setTasks] = useState<TaskResponse[]>([]);
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<string>("all"); // ⬅️ State untuk menyimpan tab aktif
+    const [activeTab, setActiveTab] = useState<string>("all");
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
     useEffect(() => {
         const fetchUser = async () => {
             try {
                 const userData = await getUser();
                 setUser(userData);
-
                 const taskData = await getUserTasks();
                 setTasks(taskData);
             } catch (error) {
@@ -40,7 +39,6 @@ const Home = () => {
                 setIsLoading(false);
             }
         };
-
         fetchUser();
     }, []);
 
@@ -49,46 +47,18 @@ const Home = () => {
         navigate("/");
     };
 
-    // Mengelompokkan tugas berdasarkan status
-    const groupedTasks = {
-        all: tasks.length,
-        belum_selesai: tasks.filter((task) => task.status.toLowerCase() === "belum selesai").length,
-        sedang_berjalan: tasks.filter((task) => task.status.toLowerCase() === "sedang berjalan").length,
-        selesai: tasks.filter((task) => task.status.toLowerCase() === "selesai").length,
-    };
-
-    // Fungsi untuk menampilkan daftar tugas berdasarkan tab yang aktif
-    const renderTaskList = (category: string) => {
-        const filteredTasks =
-            category === "all"
-                ? tasks
-                : tasks.filter((task) => task.status.toLowerCase() === category.replace("_", " "));
-
-        return isLoading ? (
-            <p className="text-center">Loading tasks...</p>
-        ) : filteredTasks.length === 0 ? (
-            <p className="text-center">Tidak ada tugas yang ditemukan.</p>
-        ) : (
-            <div className="row mb-5">
-                {filteredTasks.map((task) => (
-                    <div className="col-md-6 col-lg-4 mb-3" key={task.id}>
-                        <div className="card">
-                            <div className="card-header">
-                                {task.status === "belum selesai" && <i className="bx bxs-calendar-exclamation text-secondary"></i>}
-                                {task.status === "sedang berjalan" && <i className="bx bx-loader text-warning"></i>}
-                                {task.status === "selesai" && <i className="bx bx-task text-success"></i>}
-                                {` ${task.status}`}</div>
-                            <div className="card-body">
-                                <h5 className="card-title">{task.title}</h5>
-                                <p className="card-text">{task.description}</p>
-                                <a href="#" className="btn btn-primary">Go somewhere</a>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+    const filteredTasks = tasks
+        .filter((task) => activeTab === "all" || task.status.toLowerCase() === activeTab.replace("_", " "))
+        .filter((task) =>
+            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    };
+
+    const taskCounts = filteredTasks.reduce((acc: { [key: string]: number }, task) => {
+        const key = task.status.replace(" ", "_").toLowerCase();
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, { all: filteredTasks.length, belum_selesai: 0, sedang_berjalan: 0, selesai: 0 });
 
     return (
         <div className="layout-wrapper layout-content-navbar layout-without-menu">
@@ -99,7 +69,13 @@ const Home = () => {
                             <div className="navbar-nav align-items-center">
                                 <div className="nav-item d-flex align-items-center">
                                     <i className="bx bx-search fs-4 lh-0"></i>
-                                    <input type="text" className="form-control border-0 shadow-none" placeholder="Search..." aria-label="Search..." />
+                                    <input
+                                        type="text"
+                                        className="form-control border-0 shadow-none"
+                                        placeholder="Cari tugas..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
                                 </div>
                             </div>
                             <ul className="navbar-nav flex-row align-items-center ms-auto">
@@ -152,26 +128,40 @@ const Home = () => {
                                                     className={`nav-link ${activeTab === category ? "active" : ""}`}
                                                     onClick={() => setActiveTab(category)}
                                                 >
-                                                    {category === "all" && <i className="bx bxs-grid"></i>}
-                                                    {category === "belum_selesai" && <i className="bx bxs-calendar-exclamation text-secondary"></i>}
-                                                    {category === "sedang_berjalan" && <i className="bx bx-loader text-warning"></i>}
-                                                    {category === "selesai" && <i className="bx bx-task text-success"></i>}
-                                                    {`  ${category.replace("_", " ").toUpperCase()}`} ({groupedTasks[category as keyof typeof groupedTasks]})
+                                                    {category.replace("_", " ").toUpperCase()} ({taskCounts[category as keyof typeof taskCounts] || 0})
                                                 </button>
                                             </li>
                                         ))}
                                     </ul>
                                     <div className="tab-content">
-                                        {renderTaskList(activeTab)}
+                                        {isLoading ? (
+                                            <p className="text-center">Loading tasks...</p>
+                                        ) : filteredTasks.length === 0 ? (
+                                            <p className="text-center">Tidak ada tugas yang ditemukan.</p>
+                                        ) : (
+                                            <div className="row mb-5">
+                                                {filteredTasks.map((task) => (
+                                                    <div className="col-md-6 col-lg-4 mb-3" key={task.id}>
+                                                        <div className="card h-100">
+                                                            <div className="card-header">
+                                                                {task.status.toUpperCase()}
+                                                            </div>
+                                                            <div className="card-body">
+                                                                <h5 className="card-title">{task.title}</h5>
+                                                                <p className="card-text">
+                                                                    {task.description.length > 100 ? task.description.substring(0, 100) + "..." : task.description}
+                                                                </p>
+                                                                <button className="btn btn-primary" onClick={() => navigate(`/edit/${task.id}`)}>Edit</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <footer className="content-footer footer bg-footer-theme">
-                            <div className="container-xxl d-flex flex-wrap justify-content-between py-2">
-                                <div>&copy; {new Date().getFullYear()}, made with ❤️ by ThemeSelection</div>
-                            </div>
-                        </footer>
                     </div>
                 </div>
             </div>
