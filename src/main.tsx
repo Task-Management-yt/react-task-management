@@ -19,6 +19,7 @@ import "./assets/vendor/js/menu.js";
 import "./assets/js/main.js";
 import Register from "./pages/Register.js";
 import Home from "./pages/Home.js";
+import ProtectedRoute from "./context/ProtectedRoute.js";
 // import "https://buttons.github.io/buttons.js";
 
 
@@ -28,7 +29,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Register />} />
-        <Route path="/home" element={<Home />} />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   </React.StrictMode>

@@ -1,39 +1,52 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import InputField from "../components/Input";
 import Button from "../components/Button";
+import { isAuthenticated, login } from "../services/authService";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errors, setErrors] = useState({ email: "", password: "" });
+    const [errorMessage, setErrorMessage] = useState("");
+    const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    useEffect(() => {
 
+        if (isAuthenticated()) {
+            navigate("/home", { replace: true }); // Redirect dengan replace agar tidak bisa kembali ke login
+        }
+    }, [navigate]);
+
+    const validateForm = () => {
         const newErrors = { email: "", password: "" };
-
-        if (!email.trim()) {
-            newErrors.email = "Email atau username harus diisi.";
-        }
-
-        if (!password.trim()) {
-            newErrors.password = "Password harus diisi.";
-        } else if (password.length < 6) {
-            newErrors.password = "Password harus lebih dari 6 karakter.";
-        }
-
+        if (!email.trim()) newErrors.email = "Email atau username harus diisi.";
+        if (!password.trim()) newErrors.password = "Password harus diisi.";
+        else if (password.length < 6) newErrors.password = "Password harus lebih dari 6 karakter.";
         setErrors(newErrors);
-
-        // Jika ada error, hentikan submit
-        if (Object.values(newErrors).some(error => error !== "")) {
-            return;
-        }
-
-        console.log("Login dengan:", { email, password });
-
-        // Tambahkan request ke backend di sini
+        return Object.values(newErrors).every((error) => error === "");
     };
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!validateForm()) return;
+
+        try {
+            const data = await login(email, password);
+            console.log("Login successful:", data);
+            // redirect pengguna
+            navigate("/home");
+            console.log(`Ini token: ${localStorage.getItem("token")}`);
+        } catch (err) {
+            if (err instanceof Error) {
+                setErrorMessage(err.message || "Terjadi kesalahan saat login.");
+            } else {
+                setErrorMessage("Terjadi kesalahan saat login.");
+            }
+        }
+    };
+
 
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">
@@ -42,14 +55,15 @@ const Login = () => {
                     <h4>Welcome to Sneat! 👋</h4>
                     <p>Please sign-in to your account and start the adventure</p>
                 </div>
-                <form onSubmit={handleSubmit}>
+                {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+                <form onSubmit={handleLogin}>
                     <div>
                         <InputField
-                            label="Email or Username"
-                            type="text"
-                            placeholder="Enter your email or username"
+                            label="Email"
+                            type="email"
+                            placeholder="Enter your email"
                             value={email}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                         {errors.email && <small className="text-danger">{errors.email}</small>}
                     </div>
@@ -59,7 +73,7 @@ const Login = () => {
                             type="password"
                             placeholder="••••••••"
                             value={password}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                         {errors.password && <small className="text-danger">{errors.password}</small>}
                     </div>
